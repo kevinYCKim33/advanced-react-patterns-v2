@@ -1,6 +1,6 @@
 // Flexible Compound Components with context
 
-import React from 'react'
+import React, {createContext} from 'react'
 import {Switch} from '../switch'
 
 // Right now our component can only clone and pass props to immediate children.
@@ -44,22 +44,73 @@ import {Switch} from '../switch'
 //   (newlines are ok, like in the above example)
 
 // 🐨 create a ToggleContext with React.createContext here
+// const ToggleContext = createContext([{a: 'b'}, () => {}])
+const ToggleContext = createContext({
+  on: false,
+  toggle: () => {},
+})
+// this doesn't make any sense in this example...
+
+// ^^ didn't really need it to be in this shape...
 
 class Toggle extends React.Component {
   // 🐨 each of these compound components will need to be changed to use
   // ToggleContext.Consumer and rather than getting `on` and `toggle`
   // from props, it'll get it from the ToggleContext.Consumer value.
-  static On = ({on, children}) => (on ? children : null)
-  static Off = ({on, children}) => (on ? null : children)
-  static Button = ({on, toggle, ...props}) => (
-    <Switch on={on} onClick={toggle} {...props} />
-  )
-  state = {on: false}
+  // static On = ({on, children}) => (on ? children : null)
+  // static Off = ({on, children}) => (on ? null : children)
+  // static Button = ({on, toggle, ...props}) => (
+  // <Switch on={on} onClick={toggle} {...props} />
+  // )
+  static On = ({children}) => {
+    return (
+      <ToggleContext.Consumer>
+        {({on}) => (on ? children : null)}
+      </ToggleContext.Consumer>
+    )
+  }
+
+  static Off = ({children}) => {
+    return (
+      <ToggleContext.Consumer>
+        {({on}) => (on ? null : children)}
+      </ToggleContext.Consumer>
+    )
+  }
+
+  static Button = props => {
+    return (
+      <ToggleContext.Consumer>
+        {({on, toggle}) => (
+          <Switch on={on} onClick={toggle} {...props} />
+        )}
+      </ToggleContext.Consumer>
+    )
+  }
+
   toggle = () =>
     this.setState(
       ({on}) => ({on: !on}),
       () => this.props.onToggle(this.state.on),
     )
+
+  state = {on: false, toggle: this.toggle}
+  // toggle isn't exactly a state...
+  // and now state must be declared below the toggle function
+  // Q&A guy: putting event handler in state feels gross...so he gave up using context
+
+  // instance methods don't hoist I suppose...
+  // feels wrong but best way according to Kent
+  // some advanced react way to reduce renders
+  // every single time render is called...
+  // this object is reallocated...
+  // we create a brand new object in memory...and passing it into ToggleContext
+  // whenever toggle context is rendered...did the value prop or reference change?
+  // doesn't do shallow comparison...
+  // just goes...did it change?
+  // if it did... it re-renders all the static methods...
+  // actual values within never change(?)
+  // value changes...but the actual values within the values never change...
   render() {
     // Because this.props.children is _immediate_ children only, we need
     // to 🐨 remove this map function and render our context provider with
@@ -67,11 +118,16 @@ class Toggle extends React.Component {
     // expose the `on` state and `toggle` method as properties in the context
     // value (the value prop).
 
-    return React.Children.map(this.props.children, child =>
-      React.cloneElement(child, {
-        on: this.state.on,
-        toggle: this.toggle,
-      }),
+    // return React.Children.map(this.props.children, child =>
+    //   React.cloneElement(child, {
+    //     on: this.state.on,
+    //     toggle: this.toggle,
+    //   }),
+    // )
+    return (
+      <ToggleContext.Provider value={this.state}>
+        {this.props.children}
+      </ToggleContext.Provider>
     )
   }
 }

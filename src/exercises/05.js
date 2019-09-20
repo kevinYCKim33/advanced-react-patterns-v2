@@ -14,6 +14,10 @@ class Toggle extends React.Component {
     return {
       on: this.state.on,
       toggle: this.toggle,
+      togglerProps: {
+        'aria-pressed': this.on,
+        onClick: this.toggle,
+      },
       // In our last usage example, you'll notice that we had some
       // common props (`onClick`, and we're also missing `aria-pressed`
       // value on the `button`). Because most users will want these
@@ -23,12 +27,16 @@ class Toggle extends React.Component {
       // 🐨 Add a `togglerProps` object that has an `aria-pressed` (should
       // be set to the value of the `on` state), and an `onClick` assigned
       // to the toggle function.
+      // <Switch on={on} {...togglerProps} />
+      // <Switch on={on} 'aria-pressed'={on} onClick={this.toggle}
     }
   }
   render() {
     return this.props.children(this.getStateAndHelpers())
   }
 }
+
+// feed them a package of props to the User
 
 // Don't make changes to the Usage component. It's here to show you how your
 // component is intended to be used and is used in the tests.
